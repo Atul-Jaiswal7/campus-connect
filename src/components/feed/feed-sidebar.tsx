@@ -1,10 +1,40 @@
+"use client";
+
 import Link from "next/link";
+import { useQuery } from "@tanstack/react-query";
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ConnectButton } from "@/components/shared/connect-button";
 import { TrendingUp, Users, Eye } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 
 export function FeedSidebar() {
+  const { data: session } = useSession();
+
+  const { data: dashboard } = useQuery({
+    queryKey: ["dashboard"],
+    queryFn: async () => {
+      const res = await fetch("/api/dashboard");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const { data: suggested, isLoading } = useQuery({
+    queryKey: ["suggested-users"],
+    queryFn: async () => {
+      const res = await fetch("/api/users/suggested");
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+
+  const completion = dashboard?.data?.profileCompletion ?? 0;
+  const users = suggested?.data ?? [];
+
   return (
     <div className="space-y-4">
       <Card className="glass-card">
@@ -15,14 +45,17 @@ export function FeedSidebar() {
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
               <span>Complete your profile</span>
-              <span className="font-semibold text-linkedin">60%</span>
+              <span className="font-semibold text-linkedin">{completion}%</span>
             </div>
             <div className="h-2 rounded-full bg-secondary">
-              <div className="h-2 w-[60%] rounded-full bg-linkedin" />
+              <div
+                className="h-2 rounded-full bg-linkedin transition-all"
+                style={{ width: `${completion}%` }}
+              />
             </div>
-            <Link href="/profile/edit">
+            <Link href={`/profile/${session?.user?.id}`}>
               <Button variant="outline" size="sm" className="w-full mt-2">
-                Complete Profile
+                View Profile
               </Button>
             </Link>
           </div>
@@ -59,33 +92,46 @@ export function FeedSidebar() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {[
-            { name: "Alex Kumar", dept: "CSE", year: 3 },
-            { name: "Priya Sharma", dept: "IT", year: 2 },
-            { name: "Rahul Patel", dept: "ECE", year: 4 },
-          ].map((person) => (
-            <div key={person.name} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="text-xs bg-linkedin text-white">
-                    {person.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-sm font-medium">{person.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {person.dept} • Year {person.year}
-                  </p>
-                </div>
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-lg" />
+            ))
+          ) : users.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No suggestions right now</p>
+          ) : (
+            users.map((user: {
+              id: string;
+              profile: {
+                firstName: string;
+                lastName: string;
+                department: string | null;
+                year: number | null;
+              } | null;
+            }) => (
+              <div key={user.id} className="flex items-center justify-between">
+                <Link href={`/profile/${user.id}`} className="flex items-center gap-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="text-xs bg-linkedin text-white">
+                      {getInitials(
+                        user.profile?.firstName ?? "U",
+                        user.profile?.lastName ?? "S"
+                      )}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium">
+                      {user.profile?.firstName} {user.profile?.lastName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.profile?.department}
+                      {user.profile?.year ? ` · Year ${user.profile.year}` : ""}
+                    </p>
+                  </div>
+                </Link>
+                <ConnectButton userId={user.id} />
               </div>
-              <Button variant="outline" size="sm">
-                Connect
-              </Button>
-            </div>
-          ))}
+            ))
+          )}
         </CardContent>
       </Card>
 
@@ -93,23 +139,22 @@ export function FeedSidebar() {
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-2 text-sm font-medium">
             <Eye className="h-4 w-4" />
-            Campus Leaderboard
+            Your Stats
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {[
-            { rank: 1, name: "Dev Club", score: 1250 },
-            { rank: 2, name: "AI Society", score: 980 },
-            { rank: 3, name: "Code Warriors", score: 870 },
-          ].map((item) => (
-            <div key={item.rank} className="flex items-center justify-between text-sm">
-              <span>
-                <span className="font-bold text-linkedin mr-2">#{item.rank}</span>
-                {item.name}
-              </span>
-              <span className="text-muted-foreground">{item.score} pts</span>
-            </div>
-          ))}
+        <CardContent className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Profile Views</span>
+            <span className="font-semibold">{dashboard?.data?.profileViews ?? 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Connections</span>
+            <span className="font-semibold">{dashboard?.data?.connections ?? 0}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Streak</span>
+            <span className="font-semibold">{dashboard?.data?.streakDays ?? 0} days</span>
+          </div>
         </CardContent>
       </Card>
     </div>

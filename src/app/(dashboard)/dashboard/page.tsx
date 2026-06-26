@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -37,8 +36,7 @@ export default function DashboardPage() {
   const stats = data?.data;
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground">Your campus networking overview</p>
@@ -114,6 +112,5 @@ export default function DashboardPage() {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

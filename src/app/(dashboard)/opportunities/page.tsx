@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,8 +25,7 @@ export default function OpportunitiesPage() {
   const opportunities = data?.data ?? [];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Opportunities</h1>
           <p className="text-muted-foreground">
@@ -123,6 +121,5 @@ export default function OpportunitiesPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

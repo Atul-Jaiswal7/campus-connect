@@ -6,8 +6,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Heart, MessageCircle, Share2, Bookmark, TrendingUp } from "lucide-react";
+import { Heart, Share2, Bookmark, TrendingUp } from "lucide-react";
 import { cn, formatRelativeTime, getInitials } from "@/lib/utils";
+import { CommentSection } from "@/components/feed/comment-section";
+import { toast } from "@/hooks/use-toast";
 import type { PostWithAuthor } from "@/types";
 
 interface PostCardProps {
@@ -37,6 +39,15 @@ export function PostCard({ post }: PostCardProps) {
       return res.json();
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["feed"] }),
+  });
+
+  const shareMutation = useMutation({
+    mutationFn: async () => {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/feed?post=${post.id}`
+      );
+    },
+    onSuccess: () => toast({ title: "Link copied to clipboard!" }),
   });
 
   return (
@@ -120,11 +131,8 @@ export function PostCard({ post }: PostCardProps) {
             <Heart className={cn("mr-2 h-4 w-4", post.isLiked && "fill-current")} />
             Like
           </Button>
-          <Button variant="ghost" size="sm">
-            <MessageCircle className="mr-2 h-4 w-4" />
-            Comment
-          </Button>
-          <Button variant="ghost" size="sm">
+          <CommentSection postId={post.id} commentCount={post.commentCount} />
+          <Button variant="ghost" size="sm" onClick={() => shareMutation.mutate()}>
             <Share2 className="mr-2 h-4 w-4" />
             Share
           </Button>

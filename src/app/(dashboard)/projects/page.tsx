@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +31,7 @@ export default function ProjectsPage() {
   const projects = data?.data ?? [];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Project Hub</h1>
@@ -151,6 +149,5 @@ export default function ProjectsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

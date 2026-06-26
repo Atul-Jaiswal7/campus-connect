@@ -2,7 +2,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,8 +21,7 @@ export default function TeamsPage() {
   const recruitments = data?.data ?? [];
 
   return (
-    <DashboardLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold">Team Formation</h1>
@@ -122,6 +120,5 @@ export default function TeamsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

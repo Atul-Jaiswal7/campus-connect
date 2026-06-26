@@ -4,14 +4,13 @@ export async function getOrCreateDirectConversation(
   userId1: string,
   userId2: string
 ) {
-  const existing = await prisma.conversation.findFirst({
+  const conversations = await prisma.conversation.findMany({
     where: {
       type: "DIRECT",
-      members: {
-        every: {
-          userId: { in: [userId1, userId2] },
-        },
-      },
+      AND: [
+        { members: { some: { userId: userId1 } } },
+        { members: { some: { userId: userId2 } } },
+      ],
     },
     include: {
       members: {
@@ -37,7 +36,8 @@ export async function getOrCreateDirectConversation(
     },
   });
 
-  if (existing && existing.members.length === 2) return existing;
+  const existing = conversations.find((c) => c.members.length === 2);
+  if (existing) return existing;
 
   return prisma.conversation.create({
     data: {

@@ -106,6 +106,21 @@ export async function toggleLike(postId: string, userId: string) {
       data: { likeCount: { increment: 1 } },
     }),
   ]);
+
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (post && post.authorId !== userId) {
+    await prisma.notification.create({
+      data: {
+        userId: post.authorId,
+        actorId: userId,
+        type: "LIKE",
+        title: "New Like",
+        message: "Someone liked your post",
+        link: "/feed",
+      },
+    });
+  }
+
   return { liked: true };
 }
 

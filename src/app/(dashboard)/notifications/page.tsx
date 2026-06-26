@@ -1,7 +1,6 @@
 "use client";
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -35,8 +34,7 @@ export default function NotificationsPage() {
   const notifications = data?.data ?? [];
 
   return (
-    <DashboardLayout>
-      <div className="mx-auto max-w-2xl space-y-6">
+    <div className="mx-auto max-w-2xl space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold">Notifications</h1>
@@ -117,6 +115,5 @@ export default function NotificationsPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

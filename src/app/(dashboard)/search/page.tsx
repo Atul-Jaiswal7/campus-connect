@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
-import { DashboardLayout } from "@/components/layout/dashboard-layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,8 +34,7 @@ export default function SearchPage() {
   const results = data?.data ?? {};
 
   return (
-    <DashboardLayout>
-      <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
         <h1 className="text-2xl font-bold">Search Campus Connect</h1>
 
         <form onSubmit={handleSearch} className="flex gap-2">
@@ -108,6 +106,5 @@ export default function SearchPage() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
 }
