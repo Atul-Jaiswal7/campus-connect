@@ -4,38 +4,42 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 20% 98%; /* #F8FAFC */
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
-    --primary: 210 100% 40%;
+    --primary: 221.2 83.2% 53.3%; /* #2563EB */
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 243.8 75.4% 58.6%; /* #4F46E5 */
+    --secondary-foreground: 210 40% 98%;
     --muted: 210 40% 96.1%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --destructive: 0 84.2% 60.2%; /* #EF4444 */
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 210 100% 40%;
-    --radius: 0.5rem;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 1rem; /* rounded-2xl */
+    
+    /* Extra status colors */
+    --success: 142.1 76.2% 45.3%; /* #22C55E */
+    --warning: 37.7 93.7% 50.4%; /* #F59E0B */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222.2 84% 4.9%; /* #0F172A */
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 222.2 47% 7%; /* Deep dark card background */
     --card-foreground: 210 40% 98%;
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 100% 50%;
+    --primary: 217.2 91.2% 59.8%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 243.8 75.4% 65%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
@@ -45,7 +49,10 @@
     --destructive-foreground: 210 40% 98%;
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 210 100% 50%;
+    --ring: 217.2 91.2% 59.8%;
+
+    --success: 142.1 70% 40%;
+    --warning: 37.7 85% 45%;
   }
 }
 
@@ -54,15 +61,59 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground transition-colors duration-300;
   }
 }
 
 @layer utilities {
   .glass {
-    @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-md border border-white/20;
+    @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/10 dark:border-slate-800/50;
   }
   .glass-card {
-    @apply glass rounded-xl shadow-lg;
+    @apply glass rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300;
+  }
+  .hover-lift {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-slate-950/50;
+  }
+  .gradient-border-hover {
+    @apply relative overflow-hidden transition-all duration-300;
+  }
+  .gradient-border-hover::before {
+    content: '';
+    @apply absolute inset-0 rounded-[inherit] p-[1px] -z-10 opacity-0 transition-opacity duration-300;
+    background: linear-gradient(135deg, #2563EB, #4F46E5);
+  }
+  .gradient-border-hover:hover::before {
+    @apply opacity-100;
+  }
+  .button-ripple {
+    @apply relative overflow-hidden transform active:scale-95 transition-all duration-150;
+  }
+  .button-ripple::after {
+    content: "";
+    @apply absolute inset-0 bg-white/20 scale-0 rounded-full opacity-0 pointer-events-none;
+    transition: transform 0.4s ease-out, opacity 0.4s ease-out;
+  }
+  .button-ripple:active::after {
+    @apply scale-150 opacity-100;
+    transition: 0s;
   }
 }
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300/60 dark:bg-slate-800/80 rounded-full hover:bg-slate-400 dark:hover:bg-slate-700;
+}
+
+/* Apple/Linear custom style overrides */
+input, textarea, select {
+  @apply focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 outline-none;
+}
+

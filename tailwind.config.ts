@@ -43,10 +43,16 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+        },
         linkedin: {
-          DEFAULT: "#0A66C2",
-          dark: "#004182",
-          light: "#70B5F9",
+          DEFAULT: "#2563EB",
+          dark: "#1D4ED8",
+          light: "#60A5FA",
         },
       },
       borderRadius: {
@@ -55,7 +61,7 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-inter)", "var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "monospace"],
       },
       backdropBlur: {
