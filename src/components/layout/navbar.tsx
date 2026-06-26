@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useQuery } from "@tanstack/react-query";
 import {
   Home,
   Users,

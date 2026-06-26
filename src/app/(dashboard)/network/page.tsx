@@ -45,7 +45,7 @@ export default function NetworkPage() {
 
   const connections = data?.data ?? [];
   const pending = connections.filter(
-    (c: { status: string; receiverId: string }, _: number, __: unknown) =>
+    (c: { status: string; receiverId: string }) =>
       c.status === "PENDING"
   );
   const accepted = connections.filter(

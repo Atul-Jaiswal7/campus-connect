@@ -1,6 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { verifyUser } from "@/services/auth.service";
 
 export async function POST(req: NextRequest) {
   try {

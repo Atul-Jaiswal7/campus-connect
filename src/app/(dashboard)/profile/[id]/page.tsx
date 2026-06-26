@@ -26,7 +26,6 @@ export default function ProfileViewPage() {
   const params = useParams();
   const router = useRouter();
   const userId = params.id as string;
-  const { data: session } = useSession();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({

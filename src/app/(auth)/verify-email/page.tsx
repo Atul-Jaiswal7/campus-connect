@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap, CheckCircle, XCircle } from "lucide-react";
 
 export default function VerifyEmailPage() {
@@ -11,17 +11,7 @@ export default function VerifyEmailPage() {
   const router = useRouter();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
-  useEffect(() => {
-    const token = searchParams.get("token");
-    if (!token) {
-      setStatus("error");
-      return;
-    }
-
-    verifyEmail(token);
-  }, [searchParams]);
-
-  const verifyEmail = async (token: string) => {
+  const verifyEmail = useCallback(async (token: string) => {
     try {
       const res = await fetch("/api/auth/verify-email", {
         method: "POST",
@@ -38,7 +28,17 @@ export default function VerifyEmailPage() {
     } catch {
       setStatus("error");
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (!token) {
+      setStatus("error");
+      return;
+    }
+
+    verifyEmail(token);
+  }, [searchParams, verifyEmail]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-linkedin/5 to-background p-4">

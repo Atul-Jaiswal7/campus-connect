@@ -13,5 +13,5 @@ export default async function DashboardRootLayout({
     redirect("/login");
   }
 
-  return <DashboardLayout user={session.user}>{children}</DashboardLayout>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 }
