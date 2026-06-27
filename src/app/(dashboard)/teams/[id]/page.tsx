@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
@@ -10,13 +10,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Users, Clock, Check, X, ArrowLeft, Send, Sparkles, AlertCircle } from "lucide-react";
+import { Users, Clock, Check, X, ArrowLeft, Send, Sparkles, AlertCircle, Pencil, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { motion } from "framer-motion";
 
 export default function TeamDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
   const { data: session } = useSession();
   const queryClient = useQueryClient();
@@ -79,6 +80,18 @@ export default function TeamDetailPage() {
   const team = data?.data;
   const isLeader = team?.leaderId === session?.user?.id;
 
+  const handleDeleteRecruitment = async () => {
+    if (!confirm("Are you sure you want to delete this recruitment posting?")) return;
+    try {
+      const res = await fetch(`/api/teams/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast({ title: "Recruitment posting deleted successfully" });
+      router.push("/teams");
+    } catch {
+      toast({ title: "Failed to delete recruitment posting", variant: "destructive" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6 max-w-3xl mx-auto">
@@ -106,14 +119,34 @@ export default function TeamDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 select-none">
-      {/* Back Button */}
-      <div className="flex items-center">
+      {/* Back Button & Actions */}
+      <div className="flex items-center justify-between">
         <Link href="/teams">
           <Button variant="ghost" size="sm" className="rounded-xl gap-1.5 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back to Team Formation
           </Button>
         </Link>
+
+        {isLeader && (
+          <div className="flex items-center gap-2">
+            <Link href={`/teams/${id}/edit`}>
+              <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold gap-1.5 h-8 px-3 border-slate-200 dark:border-slate-800">
+                <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                Edit Posting
+              </Button>
+            </Link>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl text-xs font-bold gap-1.5 h-8 px-3"
+              onClick={handleDeleteRecruitment}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete Posting
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Main Details Panel */}

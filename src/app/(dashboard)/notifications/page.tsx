@@ -48,6 +48,15 @@ export default function NotificationsPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
+  const markAsRead = useMutation({
+    mutationFn: async (id: string) => {
+      await fetch(`/api/notifications/${id}`, {
+        method: "PATCH",
+      });
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+
   const notifications = data?.data ?? [];
 
   // Group notifications helper by Date
@@ -157,11 +166,12 @@ export default function NotificationsPage() {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <Card
-                        className={`glass-card border transition-all duration-200 relative overflow-hidden group ${
+                        className={`glass-card border transition-all duration-200 relative overflow-hidden group cursor-pointer ${
                           !notif.isRead
                             ? "border-primary/30 bg-primary/5 hover:border-primary/40"
                             : "border-slate-200/50 dark:border-slate-800/50 hover:bg-accent/20"
                         }`}
+                        onClick={() => !notif.isRead && markAsRead.mutate(notif.id)}
                       >
                         {/* Unread Left Border Highlight */}
                         {!notif.isRead && (

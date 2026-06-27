@@ -1,18 +1,22 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Github, Globe, ArrowLeft, Users2, Code2, ShieldAlert } from "lucide-react";
+import { Github, Globe, ArrowLeft, Users2, Code2, ShieldAlert, Pencil, Trash2 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
+import { useSession } from "next-auth/react";
+import { toast } from "@/hooks/use-toast";
 
 export default function ProjectDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params.id as string;
+  const { data: session } = useSession();
 
   const { data, isLoading } = useQuery({
     queryKey: ["project", id],
@@ -24,6 +28,19 @@ export default function ProjectDetailPage() {
   });
 
   const project = data?.data;
+  const isOwner = session?.user?.id === project?.ownerId || session?.user?.id === project?.owner?.id;
+
+  const handleDeleteProject = async () => {
+    if (!confirm("Are you sure you want to delete this project?")) return;
+    try {
+      const res = await fetch(`/api/projects/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      toast({ title: "Project deleted successfully!" });
+      router.push("/projects");
+    } catch {
+      toast({ title: "Failed to delete project", variant: "destructive" });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -52,14 +69,34 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 select-none">
-      {/* Back Button */}
-      <div className="flex items-center">
+      {/* Back Button & Actions */}
+      <div className="flex items-center justify-between">
         <Link href="/projects">
           <Button variant="ghost" size="sm" className="rounded-xl gap-1.5 text-xs text-muted-foreground hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back to Hub
           </Button>
         </Link>
+
+        {isOwner && (
+          <div className="flex items-center gap-2">
+            <Link href={`/projects/${id}/edit`}>
+              <Button variant="outline" size="sm" className="rounded-xl text-xs font-bold gap-1.5 h-8 px-3 border-slate-200 dark:border-slate-800">
+                <Pencil className="h-3.5 w-3.5 text-slate-500" />
+                Edit
+              </Button>
+            </Link>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="rounded-xl text-xs font-bold gap-1.5 h-8 px-3"
+              onClick={handleDeleteProject}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Delete
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Main Showcase Panel */}

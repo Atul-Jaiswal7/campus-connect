@@ -13,6 +13,8 @@ export async function createProject(ownerId: string, data: ProjectInput) {
       technologies: data.technologies,
       demoUrl: data.demoUrl || null,
       githubUrl: data.githubUrl || null,
+      status: data.status,
+      imageUrls: data.imageUrls || [],
       members: {
         create: { userId: ownerId, role: "Owner" },
       },
@@ -143,5 +145,55 @@ export async function getProjectById(id: string) {
         },
       },
     },
+  });
+}
+
+export async function updateProject(projectId: string, userId: string, data: Partial<ProjectInput>) {
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project) throw new Error("Project not found");
+  if (project.ownerId !== userId) throw new Error("Unauthorized to edit this project");
+
+  return prisma.project.update({
+    where: { id: projectId },
+    data: {
+      title: data.title,
+      description: data.description,
+      domain: data.domain,
+      type: data.type,
+      technologies: data.technologies,
+      demoUrl: data.demoUrl || null,
+      githubUrl: data.githubUrl || null,
+      status: data.status,
+      imageUrls: data.imageUrls,
+    },
+    include: {
+      owner: {
+        select: {
+          id: true,
+          profile: { select: { firstName: true, lastName: true, avatarUrl: true } },
+        },
+      },
+      members: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              profile: { select: { firstName: true, lastName: true, avatarUrl: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function deleteProject(projectId: string, userId: string) {
+  const project = await prisma.project.findUnique({ where: { id: projectId } });
+  if (!project) throw new Error("Project not found");
+  if (project.ownerId !== userId) throw new Error("Unauthorized to delete this project");
+
+  return prisma.project.update({
+    where: { id: projectId },
+    data: { deletedAt: new Date() },
   });
 }

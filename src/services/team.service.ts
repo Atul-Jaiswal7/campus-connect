@@ -196,3 +196,86 @@ export async function updateApplicationStatus(
 
   return updated;
 }
+
+export async function updateTeamRecruitment(
+  recruitmentId: string,
+  leaderId: string,
+  data: Partial<TeamRecruitmentInput>
+) {
+  const recruitment = await prisma.teamRecruitment.findUnique({
+    where: { id: recruitmentId },
+  });
+
+  if (!recruitment) throw new Error("Recruitment posting not found");
+  if (recruitment.leaderId !== leaderId) throw new Error("Unauthorized");
+
+  if (data.roles) {
+    const skillRecords = await Promise.all(
+      data.roles.map(async (role) => {
+        const skill = await prisma.skill.upsert({
+          where: { name: role.skillName },
+          create: { name: role.skillName },
+          update: {},
+        });
+        return { skillId: skill.id, roleNeeded: role.roleNeeded };
+      })
+    );
+
+    return prisma.$transaction(async (tx) => {
+      await tx.teamRecruitmentSkill.deleteMany({
+        where: { recruitmentId },
+      });
+
+      return tx.teamRecruitment.update({
+        where: { id: recruitmentId },
+        data: {
+          projectId: data.projectId,
+          title: data.title,
+          problemStatement: data.problemStatement,
+          teamSize: data.teamSize,
+          workload: data.workload,
+          duration: data.duration,
+          hackathonName: data.hackathonName,
+          deadline: data.deadline ? new Date(data.deadline) : null,
+          skills: {
+            create: skillRecords,
+          },
+        },
+        include: {
+          skills: { include: { skill: true } },
+        },
+      });
+    });
+  }
+
+  return prisma.teamRecruitment.update({
+    where: { id: recruitmentId },
+    data: {
+      projectId: data.projectId,
+      title: data.title,
+      problemStatement: data.problemStatement,
+      teamSize: data.teamSize,
+      workload: data.workload,
+      duration: data.duration,
+      hackathonName: data.hackathonName,
+      deadline: data.deadline ? new Date(data.deadline) : null,
+    },
+    include: {
+      skills: { include: { skill: true } },
+    },
+  });
+}
+
+export async function deleteTeamRecruitment(recruitmentId: string, leaderId: string) {
+  const recruitment = await prisma.teamRecruitment.findUnique({
+    where: { id: recruitmentId },
+  });
+
+  if (!recruitment) throw new Error("Recruitment posting not found");
+  if (recruitment.leaderId !== leaderId) throw new Error("Unauthorized");
+
+  return prisma.teamRecruitment.update({
+    where: { id: recruitmentId },
+    data: { deletedAt: new Date() },
+  });
+}

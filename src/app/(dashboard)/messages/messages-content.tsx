@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Send, MessageSquare, ArrowLeft } from "lucide-react";
+import { Send, MessageSquare, ArrowLeft, Paperclip, Loader2, X } from "lucide-react";
 import { getInitials, formatRelativeTime, cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
 
 export default function MessagesContent() {
   const { data: session } = useSession();
@@ -20,6 +21,11 @@ export default function MessagesContent() {
     searchParams.get("conversation")
   );
   const [messageText, setMessageText] = useState("");
+  const [attachedUrl, setAttachedUrl] = useState<string | null>(null);
+  const [attachedName, setAttachedName] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,21 +55,65 @@ export default function MessagesContent() {
   });
 
   const sendMutation = useMutation({
-    mutationFn: async (content: string) => {
+    mutationFn: async (payload: { content: string; fileUrl?: string | null; fileName?: string | null }) => {
       const res = await fetch(`/api/conversations/${selectedConversation}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to send");
       return res.json();
     },
     onSuccess: () => {
       setMessageText("");
+      setAttachedUrl(null);
+      setAttachedName(null);
       queryClient.invalidateQueries({ queryKey: ["messages", selectedConversation] });
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
+
+  const handleAttachClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (data.success) {
+        setAttachedUrl(data.url);
+        setAttachedName(file.name);
+        toast({ title: "Attachment uploaded successfully!" });
+      }
+    } catch {
+      toast({ title: "Failed to upload attachment", variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSend = () => {
+    if (!messageText.trim() && !attachedUrl) return;
+    sendMutation.mutate({
+      content: messageText || "Sent an image",
+      fileUrl: attachedUrl,
+      fileName: attachedName,
+    });
+  };
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -94,7 +144,6 @@ export default function MessagesContent() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr] items-start">
-        {/* Left Side: Active Threads list */}
         <Card className={cn(
           "glass-card overflow-hidden border border-slate-200/50 dark:border-slate-800/50",
           selectedConversation ? "hidden md:block" : "block"
@@ -151,7 +200,6 @@ export default function MessagesContent() {
                             )}
                           </AvatarFallback>
                         </Avatar>
-                        {/* Mock Online dot */}
                         <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background" />
                       </div>
                       
@@ -173,17 +221,14 @@ export default function MessagesContent() {
           </CardContent>
         </Card>
 
-        {/* Right Side: Chat box window */}
         <Card className={cn(
           "glass-card border border-slate-200/50 dark:border-slate-800/50 overflow-hidden flex flex-col justify-between min-h-[480px] h-[520px]",
           selectedConversation ? "block" : "hidden md:flex"
         )}>
           {selectedConversation && otherUser ? (
             <div className="flex flex-col justify-between h-full">
-              {/* Header */}
               <div className="border-b border-slate-100 dark:border-slate-900 px-4 py-3 flex items-center justify-between bg-card/60 backdrop-blur-xs">
                 <div className="flex items-center gap-3">
-                  {/* Back to list trigger for narrow viewports */}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -211,8 +256,7 @@ export default function MessagesContent() {
                 </div>
               </div>
 
-              {/* Message History Scroller */}
-              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+              <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-slate-50/30 dark:bg-slate-950/20">
                 {messagesLoading ? (
                   <div className="space-y-3">
                     <Skeleton className="h-10 w-1/3 rounded-xl" />
@@ -228,6 +272,7 @@ export default function MessagesContent() {
                     content: string;
                     createdAt: string;
                     senderId: string;
+                    fileUrl?: string | null;
                   }) => {
                     const isMine = msg.senderId === session?.user?.id;
                     return (
@@ -237,12 +282,17 @@ export default function MessagesContent() {
                       >
                         <div
                           className={cn(
-                            "max-w-[75%] rounded-2xl px-3.5 py-2.5 text-xs font-semibold shadow-sm leading-normal border",
+                            "max-w-[75%] rounded-2xl px-3.5 py-2.5 text-xs font-semibold shadow-sm leading-normal border space-y-2",
                             isMine
                               ? "bg-primary border-primary text-white rounded-br-sm"
                               : "bg-slate-100 dark:bg-slate-900 border-slate-200/50 dark:border-slate-800 text-foreground rounded-bl-sm"
                           )}
                         >
+                          {msg.fileUrl && (
+                            <div className="rounded-lg overflow-hidden border max-w-xs bg-black/10">
+                              <img src={msg.fileUrl} alt="attachment" className="max-h-48 object-contain w-full" />
+                            </div>
+                          )}
                           <p>{msg.content}</p>
                           <span
                             className={cn(
@@ -260,29 +310,72 @@ export default function MessagesContent() {
                 <div ref={messagesEndRef} />
               </div>
 
-              {/* Chat Input Dock */}
-              <div className="border-t border-slate-100 dark:border-slate-900 p-4 bg-card/60 backdrop-blur-xs flex items-center gap-2">
-                <Input
-                  placeholder="Write a message..."
-                  className="rounded-xl h-10 border border-slate-200 dark:border-slate-800 bg-background/50 focus:bg-background text-xs font-semibold focus:ring-4 focus:ring-primary/5"
-                  value={messageText}
-                  onChange={(e) => setMessageText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      if (messageText.trim()) sendMutation.mutate(messageText);
-                    }
-                  }}
-                />
-                <Button
-                  variant="linkedin"
-                  size="icon"
-                  className="h-10 w-10 shrink-0 rounded-xl shadow-md button-ripple"
-                  disabled={!messageText.trim() || sendMutation.isPending}
-                  onClick={() => sendMutation.mutate(messageText)}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
+              <div className="border-t border-slate-100 dark:border-slate-900 p-4 bg-card/60 backdrop-blur-xs flex flex-col gap-2">
+                {uploading && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-bold pl-1">
+                    <Loader2 className="h-3 w-3 animate-spin" /> Uploading attachment...
+                  </div>
+                )}
+                {attachedUrl && (
+                  <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-900 px-3 py-1.5 rounded-xl border max-w-sm">
+                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300 truncate flex-1">
+                      {attachedName}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAttachedUrl(null);
+                        setAttachedName(null);
+                      }}
+                      className="text-red-500 hover:text-red-650 ml-2"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 rounded-xl border-slate-200 dark:border-slate-800"
+                    onClick={handleAttachClick}
+                    disabled={uploading}
+                  >
+                    <Paperclip className="h-4 w-4 text-slate-500" />
+                  </Button>
+                  <Input
+                    placeholder="Write a message..."
+                    className="rounded-xl h-10 border border-slate-200 dark:border-slate-800 bg-background/50 focus:bg-background text-xs font-semibold focus:ring-4 focus:ring-primary/5"
+                    value={messageText}
+                    onChange={(e) => setMessageText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSend();
+                      }
+                    }}
+                  />
+                  <Button
+                    variant="linkedin"
+                    size="icon"
+                    className="h-10 w-10 shrink-0 rounded-xl shadow-md button-ripple"
+                    disabled={(!messageText.trim() && !attachedUrl) || sendMutation.isPending || uploading}
+                    onClick={handleSend}
+                  >
+                    {sendMutation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
           ) : (

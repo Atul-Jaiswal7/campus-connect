@@ -85,10 +85,56 @@ export async function GET(req: NextRequest) {
       results.opportunities = await prisma.opportunity.findMany({
         where: {
           isActive: true,
+          deletedAt: null,
           OR: [
             { title: { contains: q, mode: "insensitive" } },
             { company: { contains: q, mode: "insensitive" } },
           ],
+        },
+        take: 10,
+      });
+    }
+
+    if (type === "all" || type === "post") {
+      results.posts = await prisma.post.findMany({
+        where: {
+          deletedAt: null,
+          OR: [
+            { content: { contains: q, mode: "insensitive" } },
+            { hashtags: { has: q } },
+          ],
+        },
+        include: {
+          author: {
+            select: {
+              profile: {
+                select: { firstName: true, lastName: true, avatarUrl: true },
+              },
+            },
+          },
+        },
+        take: 10,
+      });
+    }
+
+    if (type === "all" || type === "team") {
+      results.teams = await prisma.teamRecruitment.findMany({
+        where: {
+          isActive: true,
+          deletedAt: null,
+          OR: [
+            { title: { contains: q, mode: "insensitive" } },
+            { problemStatement: { contains: q, mode: "insensitive" } },
+          ],
+        },
+        include: {
+          leader: {
+            select: {
+              profile: {
+                select: { firstName: true, lastName: true, avatarUrl: true },
+              },
+            },
+          },
         },
         take: 10,
       });

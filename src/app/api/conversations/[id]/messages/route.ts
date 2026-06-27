@@ -52,7 +52,13 @@ export async function POST(
 
     const body = await req.json();
     const validated = messageSchema.parse(body);
-    const message = await sendMessage(id, session.user.id, validated.content);
+    const message = await sendMessage(
+      id,
+      session.user.id,
+      validated.content,
+      validated.fileUrl,
+      validated.fileName
+    );
 
     return NextResponse.json({ success: true, data: message }, { status: 201 });
   } catch (error) {

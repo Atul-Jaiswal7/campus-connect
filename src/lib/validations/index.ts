@@ -97,6 +97,8 @@ export const projectSchema = z.object({
   technologies: z.array(z.string()).min(1),
   demoUrl: z.string().url().optional().or(z.literal("")),
   githubUrl: z.string().url().optional().or(z.literal("")),
+  status: z.enum(["PLANNING", "IN_PROGRESS", "COMPLETED", "ON_HOLD", "ARCHIVED"]).default("PLANNING"),
+  imageUrls: z.array(z.string().url()).optional(),
 });
 
 export const teamRecruitmentSchema = z.object({

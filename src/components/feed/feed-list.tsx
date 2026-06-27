@@ -35,6 +35,24 @@ export function FeedList({ trending = false }: { trending?: boolean }) {
           <Skeleton key={i} className="h-48 w-full rounded-xl" />
         ))}
 
+      {!isLoading && posts.length === 0 && (
+        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
+          <CardContent className="py-20 flex flex-col items-center justify-center text-center max-w-md mx-auto space-y-4">
+            <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-850 flex items-center justify-center text-muted-foreground">
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-foreground">No Posts Yet</h3>
+            <p className="text-xs text-muted-foreground font-medium leading-relaxed">
+              {trending 
+                ? "No trending posts at the moment. Check back later!"
+                : "Be the first to share something with your campus community!"}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}

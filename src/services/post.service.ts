@@ -166,3 +166,35 @@ export async function addComment(
 
   return comment;
 }
+
+export async function updatePost(postId: string, userId: string, data: Partial<PostInput>) {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new Error("Post not found");
+  if (post.authorId !== userId) throw new Error("Unauthorized to edit this post");
+
+  const hashtags = data.content ? extractHashtags(data.content) : undefined;
+
+  return prisma.post.update({
+    where: { id: postId },
+    data: {
+      content: data.content,
+      type: data.type,
+      visibility: data.visibility,
+      imageUrls: data.imageUrls,
+      githubUrl: data.githubUrl,
+      ...(hashtags ? { hashtags } : {}),
+    },
+    include: POST_INCLUDE,
+  });
+}
+
+export async function deletePost(postId: string, userId: string) {
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) throw new Error("Post not found");
+  if (post.authorId !== userId) throw new Error("Unauthorized to delete this post");
+
+  return prisma.post.update({
+    where: { id: postId },
+    data: { deletedAt: new Date() },
+  });
+}

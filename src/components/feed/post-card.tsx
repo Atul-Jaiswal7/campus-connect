@@ -1,15 +1,17 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Heart, Share2, Bookmark, TrendingUp } from "lucide-react";
+import { Heart, Share2, Bookmark, TrendingUp, MoreHorizontal } from "lucide-react";
 import { cn, formatRelativeTime, getInitials } from "@/lib/utils";
 import { CommentSection } from "@/components/feed/comment-section";
 import { toast } from "@/hooks/use-toast";
+import { useSession } from "next-auth/react";
 import type { PostWithAuthor } from "@/types";
 
 interface PostCardProps {
@@ -18,10 +20,17 @@ interface PostCardProps {
 
 export function PostCard({ post }: PostCardProps) {
   const queryClient = useQueryClient();
+  const { data: session } = useSession();
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(post.content);
+  const [showMenu, setShowMenu] = useState(false);
+
   const author = post.author.profile;
   const authorName = author
     ? `${author.firstName} ${author.lastName}`
     : "Unknown User";
+
+  const isOwner = session?.user?.id === post.author.id;
 
   const likeMutation = useMutation({
     mutationFn: async () => {
@@ -49,6 +58,48 @@ export function PostCard({ post }: PostCardProps) {
     },
     onSuccess: () => toast({ title: "Link copied to clipboard!" }),
   });
+
+  const updateMutation = useMutation({
+    mutationFn: async (content: string) => {
+      const res = await fetch(`/api/posts/${post.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error();
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      toast({ title: "Post updated successfully!" });
+      setIsEditing(false);
+    },
+    onError: () => {
+      toast({ title: "Failed to update post", variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/posts/${post.id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["feed"] });
+      toast({ title: "Post deleted successfully!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete post", variant: "destructive" });
+    },
+  });
+
+  const handleSave = () => {
+    if (editContent.trim() === "") return;
+    updateMutation.mutate(editContent);
+  };
 
   return (
     <Card className="glass-card animate-slide-up">
@@ -84,13 +135,70 @@ export function PostCard({ post }: PostCardProps) {
               </p>
             </div>
           </div>
-          <span className="rounded-full bg-secondary px-2 py-0.5 text-xs capitalize">
-            {post.type.toLowerCase().replace("_", " ")}
-          </span>
+          <div className="flex items-center gap-2 relative">
+            <span className="rounded-full bg-slate-100 dark:bg-slate-800 border px-2.5 py-0.5 text-xs capitalize shrink-0 text-slate-600 dark:text-slate-400">
+              {post.type.toLowerCase().replace("_", " ")}
+            </span>
+            {isOwner && (
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full border border-transparent hover:border-slate-200 dark:hover:border-slate-800"
+                  onClick={() => setShowMenu(!showMenu)}
+                >
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+                {showMenu && (
+                  <div className="absolute right-0 top-9 w-28 bg-card border rounded-xl shadow-lg z-50 py-1 overflow-hidden">
+                    <button
+                      className="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                      onClick={() => {
+                        setIsEditing(true);
+                        setShowMenu(false);
+                      }}
+                    >
+                      Edit Post
+                    </button>
+                    <button
+                      className="w-full text-left px-3 py-1.5 text-xs font-semibold hover:bg-red-50 dark:hover:bg-red-950/20 text-red-650 dark:text-red-400 transition-colors"
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete this post?")) {
+                          deleteMutation.mutate();
+                        }
+                        setShowMenu(false);
+                      }}
+                    >
+                      Delete Post
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
-        <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+        {isEditing ? (
+          <div className="space-y-2">
+            <textarea
+              className="w-full rounded-xl bg-card border border-slate-200 dark:border-slate-800 text-sm p-3 focus:outline-none focus:ring-2 focus:ring-primary/20 resize-none font-medium text-foreground animate-pulse"
+              rows={3}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button size="sm" variant="ghost" className="rounded-lg h-7 font-bold text-xs" onClick={() => setIsEditing(false)}>
+                Cancel
+              </Button>
+              <Button size="sm" variant="linkedin" className="rounded-lg h-7 font-bold text-xs px-3" onClick={handleSave} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="whitespace-pre-wrap text-sm">{post.content}</p>
+        )}
 
         {post.imageUrls.length > 0 && (
           <div className="grid gap-2">
