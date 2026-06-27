@@ -39,7 +39,7 @@ export function CreatePostBox() {
 
   return (
     <Card className="glass-card">
-      <CardContent className="pt-6">
+      <CardContent className="p-4 sm:p-6 pt-6 sm:pt-6">
         <div className="flex gap-3">
           <Avatar>
             <AvatarImage src={session?.user?.image ?? undefined} />

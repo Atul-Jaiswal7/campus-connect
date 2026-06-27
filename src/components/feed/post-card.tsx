@@ -52,7 +52,7 @@ export function PostCard({ post }: PostCardProps) {
 
   return (
     <Card className="glass-card animate-slide-up">
-      <CardHeader className="pb-3">
+      <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-3">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <Link href={`/profile/${post.author.id}`}>
@@ -89,7 +89,7 @@ export function PostCard({ post }: PostCardProps) {
           </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-4 sm:p-6 pt-0 sm:pt-0 space-y-4">
         <p className="whitespace-pre-wrap text-sm">{post.content}</p>
 
         {post.imageUrls.length > 0 && (
