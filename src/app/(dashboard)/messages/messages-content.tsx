@@ -95,7 +95,10 @@ export default function MessagesContent() {
 
       <div className="grid gap-4 md:grid-cols-[280px_1fr] lg:grid-cols-[320px_1fr] items-start">
         {/* Left Side: Active Threads list */}
-        <Card className="glass-card overflow-hidden border border-slate-200/50 dark:border-slate-800/50">
+        <Card className={cn(
+          "glass-card overflow-hidden border border-slate-200/50 dark:border-slate-800/50",
+          selectedConversation ? "hidden md:block" : "block"
+        )}>
           <CardContent className="p-3">
             {isLoading ? (
               <div className="space-y-2">
@@ -171,7 +174,10 @@ export default function MessagesContent() {
         </Card>
 
         {/* Right Side: Chat box window */}
-        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50 overflow-hidden flex flex-col justify-between min-h-[480px] h-[520px]">
+        <Card className={cn(
+          "glass-card border border-slate-200/50 dark:border-slate-800/50 overflow-hidden flex flex-col justify-between min-h-[480px] h-[520px]",
+          selectedConversation ? "block" : "hidden md:flex"
+        )}>
           {selectedConversation && otherUser ? (
             <div className="flex flex-col justify-between h-full">
               {/* Header */}

@@ -15,6 +15,10 @@ import {
   Bell,
   MessageSquare,
   Users,
+  Home,
+  FolderKanban,
+  UsersRound,
+  Briefcase,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
@@ -82,8 +86,9 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
-      <div className="container mx-auto flex h-14 items-center justify-between px-4">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-14 items-center justify-between px-4">
         {/* Left Side: Brand Logo */}
         <div className="flex items-center gap-4">
           <Button
@@ -232,6 +237,7 @@ export function Navbar() {
           )}
         </div>
       </div>
+      </header>
 
       {/* Mobile Drawer (Notion/Discord menu) */}
       <AnimatePresence>
@@ -285,40 +291,36 @@ export function Navbar() {
               </form>
 
               {/* Navigation list */}
-              <div className="flex-1 space-y-2">
-                <Link
-                  href="/feed"
-                  onClick={() => setMobileDrawerOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                    pathname.startsWith("/feed") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  )}
-                >
-                  <Menu className="h-5 w-5" />
-                  <span>Dashboard Feed</span>
-                </Link>
-                <Link
-                  href="/network"
-                  onClick={() => setMobileDrawerOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                    pathname.startsWith("/network") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  )}
-                >
-                  <Users className="h-5 w-5" />
-                  <span>Network</span>
-                </Link>
-                <Link
-                  href="/settings"
-                  onClick={() => setMobileDrawerOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                    pathname.startsWith("/settings") ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
-                  )}
-                >
-                  <Settings className="h-5 w-5" />
-                  <span>Settings</span>
-                </Link>
+              <div className="flex-1 space-y-1.5 overflow-y-auto pr-1">
+                {[
+                  { href: "/feed", label: "Feed", icon: Home },
+                  { href: "/network", label: "My Network", icon: Users },
+                  { href: "/projects", label: "Projects", icon: FolderKanban },
+                  { href: "/teams", label: "Teams", icon: UsersRound },
+                  { href: "/opportunities", label: "Opportunities", icon: Briefcase },
+                  { href: "/messages", label: "Messages", icon: MessageSquare },
+                  { href: "/notifications", label: "Notifications", icon: Bell },
+                  { href: "/settings", label: "Settings", icon: Settings },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.href || (item.href !== "/feed" && pathname.startsWith(item.href));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileDrawerOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                        isActive
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
+                      )}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span>{item.label}</span>
+                    </Link>
+                  );
+                })}
               </div>
 
               {/* User bottom metadata */}
@@ -350,6 +352,6 @@ export function Navbar() {
           </div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   );
 }

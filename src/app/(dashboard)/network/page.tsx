@@ -112,8 +112,8 @@ export default function NetworkPage() {
               };
             }) => (
               <Card key={conn.id} className="glass-card border border-slate-200/50 dark:border-slate-800/50 group overflow-hidden">
-                <CardContent className="flex items-center justify-between p-4 gap-3">
-                  <Link href={`/profile/${conn.requester.id}`} className="flex items-center gap-3 overflow-hidden">
+                <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                  <Link href={`/profile/${conn.requester.id}`} className="flex items-center gap-3 overflow-hidden w-full sm:w-auto">
                     <Avatar className="h-10 w-10 shrink-0 group-hover:ring-2 group-hover:ring-primary/20 transition-all">
                       <AvatarImage src={conn.requester.profile?.avatarUrl ?? undefined} />
                       <AvatarFallback className="bg-primary text-white text-xs font-bold">
@@ -123,7 +123,7 @@ export default function NetworkPage() {
                         )}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="overflow-hidden">
+                    <div className="overflow-hidden flex-1 sm:flex-initial">
                       <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
                         {conn.requester.profile?.firstName}{" "}
                         {conn.requester.profile?.lastName}
@@ -134,7 +134,7 @@ export default function NetworkPage() {
                     </div>
                   </Link>
                   
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1.5 shrink-0 justify-end w-full sm:w-auto">
                     <Button
                       variant="linkedin"
                       size="sm"

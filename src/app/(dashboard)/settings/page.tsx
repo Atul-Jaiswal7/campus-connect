@@ -63,9 +63,9 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[220px_1fr] items-start">
-        {/* Left Side: Apple-style Settings Navigation list */}
-        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50 p-2">
-          <div className="space-y-1">
+        {/* Left Side: Settings Navigation tabs (horizontal scroll on mobile) */}
+        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50 p-1.5 overflow-x-auto scrollbar-none">
+          <div className="flex gap-1 md:flex-col md:space-y-1 md:gap-0 min-w-max md:min-w-0">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -73,14 +73,14 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                  className={`w-auto md:w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
                     isActive
                       ? tab.danger
                         ? "bg-destructive/10 text-destructive"
                         : "bg-primary/10 text-primary"
                       : tab.danger
                       ? "text-destructive hover:bg-destructive/5"
-                      : "text-muted-foreground hover:bg-accent/40 hover:text-foreground"
+                      : "text-muted-foreground hover:bg-accent/60 hover:text-foreground"
                   }`}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
