@@ -221,6 +221,130 @@ export default function DashboardPage() {
         </Card>
       </div>
 
+      {/* Recent Activity Section */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Posts */}
+        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-bold">Recent Posts</CardTitle>
+            <Link href="/feed">
+              <Button size="sm" variant="ghost" className="text-xs font-bold text-primary hover:text-primary-dark">
+                View All
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats?.recentPosts && stats.recentPosts.length > 0 ? (
+              stats.recentPosts.slice(0, 3).map((post: any) => (
+                <div key={post.id} className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border">
+                  <p className="text-xs font-semibold text-foreground line-clamp-2">{post.content}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {post.likeCount} likes · {post.commentCount} comments
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground font-semibold text-center py-4">No posts yet</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Saved Posts */}
+        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-bold">Saved Posts</CardTitle>
+            <Link href="/feed">
+              <Button size="sm" variant="ghost" className="text-xs font-bold text-primary hover:text-primary-dark">
+                View All
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats?.savedPosts && stats.savedPosts.length > 0 ? (
+              stats.savedPosts.slice(0, 3).map((post: any) => (
+                <div key={post.id} className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border">
+                  <p className="text-xs font-semibold text-foreground line-clamp-2">{post.content}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    by {post.author?.profile?.firstName} {post.author?.profile?.lastName}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-xs text-muted-foreground font-semibold text-center py-4">No saved posts</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Projects & Teams */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Recent Projects */}
+        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-bold">Your Projects</CardTitle>
+            <Link href="/projects">
+              <Button size="sm" variant="ghost" className="text-xs font-bold text-primary hover:text-primary-dark">
+                View All
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats?.recentProjects && stats.recentProjects.length > 0 ? (
+              stats.recentProjects.slice(0, 3).map((project: any) => (
+                <Link key={project.id} href={`/projects/${project.id}`}>
+                  <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border hover:bg-accent/40 cursor-pointer transition-colors">
+                    <p className="text-xs font-bold text-foreground">{project.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{project.status}</p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs text-muted-foreground font-semibold">No projects yet</p>
+                <Link href="/projects/new">
+                  <Button size="sm" variant="linkedin" className="mt-2 text-xs font-bold">
+                    Create Project
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Teams */}
+        <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
+          <CardHeader className="flex flex-row items-center justify-between pb-3">
+            <CardTitle className="text-base font-bold">Team Recruitments</CardTitle>
+            <Link href="/teams">
+              <Button size="sm" variant="ghost" className="text-xs font-bold text-primary hover:text-primary-dark">
+                View All
+              </Button>
+            </Link>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {stats?.recentTeams && stats.recentTeams.length > 0 ? (
+              stats.recentTeams.slice(0, 3).map((team: any) => (
+                <Link key={team.id} href={`/teams/${team.id}`}>
+                  <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border hover:bg-accent/40 cursor-pointer transition-colors">
+                    <p className="text-xs font-bold text-foreground">{team.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">{team.currentMembers}/{team.teamSize} members</p>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-xs text-muted-foreground font-semibold">No team recruitments yet</p>
+                <Link href="/teams/new">
+                  <Button size="sm" variant="linkedin" className="mt-2 text-xs font-bold">
+                    Recruit Team
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Modular Quick Actions Dock */}
       <div className="space-y-4">
         <h3 className="text-base font-bold tracking-tight">Quick Connect Docks</h3>

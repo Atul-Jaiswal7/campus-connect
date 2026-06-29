@@ -150,6 +150,10 @@ export interface DashboardStats {
   unreadNotifications: number;
   profileCompletion: number;
   streakDays: number;
+  recentPosts?: any[];
+  recentProjects?: any[];
+  recentTeams?: any[];
+  savedPosts?: any[];
 }
 
 export interface SearchResult {

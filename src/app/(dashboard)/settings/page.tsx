@@ -12,12 +12,14 @@ import {
   Bell,
   Trash2,
   Check,
+  Loader2,
 } from "lucide-react";
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
 
 type SettingsTab =
   | "account"
@@ -30,14 +32,88 @@ type SettingsTab =
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const { theme, setTheme } = useTheme();
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
 
-  // Mock Form States
-  const [username, setUsername] = useState(session?.user?.name ?? "Alex Kumar");
-  const [email, setEmail] = useState(session?.user?.email ?? "alex.kumar@college.edu");
+  // Form States
+  const [username, setUsername] = useState(session?.user?.name ?? "");
+  const [email, setEmail] = useState(session?.user?.email ?? "");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [showEmailNotifications, setShowEmailNotifications] = useState(true);
   const [showMatchSuggestions, setShowMatchSuggestions] = useState(true);
   const [profilePublic, setProfilePublic] = useState(true);
+  const [deletePassword, setDeletePassword] = useState("");
+
+  const updateSettingsMutation = useMutation({
+    mutationFn: async (settings: any) => {
+      const res = await fetch("/api/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(settings),
+      });
+      if (!res.ok) throw new Error("Failed to update settings");
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Settings saved successfully!" });
+    },
+    onError: () => {
+      toast({ title: "Failed to save settings", variant: "destructive" });
+    },
+  });
+
+  const deleteAccountMutation = useMutation({
+    mutationFn: async (password: string) => {
+      const res = await fetch("/api/settings", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+      });
+      if (!res.ok) throw new Error("Failed to delete account");
+      return res.json();
+    },
+    onSuccess: async () => {
+      toast({ title: "Account deleted successfully" });
+      await signOut({ callbackUrl: "/" });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete account. Check your password.", variant: "destructive" });
+    },
+  });
+
+  const handleSaveAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSettingsMutation.mutate({ emailNotifications: showEmailNotifications });
+  };
+
+  const handleSavePassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentPassword || !newPassword) {
+      toast({ title: "Please fill in all password fields", variant: "destructive" });
+      return;
+    }
+    // Password change would need a separate API endpoint
+    toast({ title: "Password change requires additional verification" });
+  };
+
+  const handleSavePrivacy = () => {
+    updateSettingsMutation.mutate({ matchSuggestions: showMatchSuggestions, profilePublic });
+  };
+
+  const handleSaveNotifications = () => {
+    updateSettingsMutation.mutate({ emailNotifications: showEmailNotifications });
+  };
+
+  const handleDeleteAccount = () => {
+    if (!deletePassword) {
+      toast({ title: "Please enter your password to confirm", variant: "destructive" });
+      return;
+    }
+    if (!confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
+      return;
+    }
+    deleteAccountMutation.mutate(deletePassword);
+  };
 
   const tabs = [
     { id: "account", label: "Account", icon: User, danger: false },
@@ -47,11 +123,6 @@ export default function SettingsPage() {
     { id: "notifications", label: "Notifications", icon: Bell, danger: false },
     { id: "danger", label: "Danger Zone", icon: Trash2, danger: true },
   ] as const;
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({ title: "Settings saved successfully!" });
-  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 select-none">
@@ -63,7 +134,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-[220px_1fr] items-start">
-        {/* Left Side: Settings Navigation tabs (horizontal scroll on mobile) */}
+        {/* Left Side: Settings Navigation tabs */}
         <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50 p-1.5 overflow-x-auto scrollbar-none">
           <div className="flex gap-1 md:flex-col md:space-y-1 md:gap-0 min-w-max md:min-w-0">
             {tabs.map((tab) => {
@@ -104,7 +175,7 @@ export default function SettingsPage() {
               >
                 {/* ACCOUNT SECTION */}
                 {activeTab === "account" && (
-                  <form onSubmit={handleSave} className="space-y-5">
+                  <form onSubmit={handleSaveAccount} className="space-y-5">
                     <div>
                       <h3 className="text-base font-bold text-foreground">Account Information</h3>
                       <p className="text-xs text-muted-foreground">Manage details relating to your student registry profile.</p>
@@ -134,8 +205,15 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="pt-4 border-t flex justify-end">
-                      <Button type="submit" variant="linkedin" className="rounded-xl font-bold h-10 text-xs button-ripple">
-                        Save Changes
+                      <Button 
+                        type="submit" 
+                        variant="linkedin" 
+                        className="rounded-xl font-bold h-10 text-xs button-ripple"
+                        disabled={updateSettingsMutation.isPending}
+                      >
+                        {updateSettingsMutation.isPending ? (
+                          <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Saving...</>
+                        ) : "Save Changes"}
                       </Button>
                     </div>
                   </form>
@@ -143,7 +221,7 @@ export default function SettingsPage() {
 
                 {/* SECURITY SECTION */}
                 {activeTab === "security" && (
-                  <form onSubmit={handleSave} className="space-y-5">
+                  <form onSubmit={handleSavePassword} className="space-y-5">
                     <div>
                       <h3 className="text-base font-bold text-foreground">Security & Login</h3>
                       <p className="text-xs text-muted-foreground">Update password keys and manage authentication credentials.</p>
@@ -156,6 +234,8 @@ export default function SettingsPage() {
                           id="currpass"
                           type="password"
                           placeholder="••••••••"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
                           className="rounded-xl h-10 border border-slate-200 dark:border-slate-800 text-xs font-semibold"
                         />
                       </div>
@@ -166,6 +246,8 @@ export default function SettingsPage() {
                           id="newpass"
                           type="password"
                           placeholder="••••••••"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
                           className="rounded-xl h-10 border border-slate-200 dark:border-slate-800 text-xs font-semibold"
                         />
                       </div>
@@ -188,7 +270,6 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-4 pt-2 border-t">
-                      {/* Toggle card 1 */}
                       <div className="flex items-center justify-between p-3 rounded-2xl border bg-slate-50/50 dark:bg-slate-950/40">
                         <div>
                           <p className="text-xs font-bold">Public Student Profile</p>
@@ -202,7 +283,6 @@ export default function SettingsPage() {
                         />
                       </div>
 
-                      {/* Toggle card 2 */}
                       <div className="flex items-center justify-between p-3 rounded-2xl border bg-slate-50/50 dark:bg-slate-950/40">
                         <div>
                           <p className="text-xs font-bold">Teammate Recommendations</p>
@@ -215,6 +295,19 @@ export default function SettingsPage() {
                           className="h-4 w-8 bg-slate-200 text-primary border-slate-350 focus:ring-0 rounded cursor-pointer"
                         />
                       </div>
+                    </div>
+
+                    <div className="pt-4 border-t flex justify-end">
+                      <Button 
+                        onClick={handleSavePrivacy}
+                        variant="linkedin" 
+                        className="rounded-xl font-bold h-10 text-xs button-ripple"
+                        disabled={updateSettingsMutation.isPending}
+                      >
+                        {updateSettingsMutation.isPending ? (
+                          <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Saving...</>
+                        ) : "Save Privacy Settings"}
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -230,7 +323,6 @@ export default function SettingsPage() {
                     <div className="space-y-4 pt-2 border-t">
                       <Label className="text-xs font-bold">Select Interface Style</Label>
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Light Card */}
                         <div
                           onClick={() => setTheme("light")}
                           className={`p-4 rounded-2xl border cursor-pointer flex flex-col justify-between h-24 hover-lift ${
@@ -246,7 +338,6 @@ export default function SettingsPage() {
                           <span className="text-[10px] text-muted-foreground">Soft backgrounds, high contrast text</span>
                         </div>
 
-                        {/* Dark Card */}
                         <div
                           onClick={() => setTheme("dark")}
                           className={`p-4 rounded-2xl border cursor-pointer flex flex-col justify-between h-24 hover-lift ${
@@ -275,7 +366,6 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-4 pt-2 border-t">
-                      {/* Email alerts */}
                       <div className="flex items-center justify-between p-3 rounded-2xl border bg-slate-50/50 dark:bg-slate-950/40">
                         <div>
                           <p className="text-xs font-bold">Email Digest Alerts</p>
@@ -288,6 +378,19 @@ export default function SettingsPage() {
                           className="h-4 w-8 bg-slate-200 text-primary border-slate-350 focus:ring-0 rounded cursor-pointer"
                         />
                       </div>
+                    </div>
+
+                    <div className="pt-4 border-t flex justify-end">
+                      <Button 
+                        onClick={handleSaveNotifications}
+                        variant="linkedin" 
+                        className="rounded-xl font-bold h-10 text-xs button-ripple"
+                        disabled={updateSettingsMutation.isPending}
+                      >
+                        {updateSettingsMutation.isPending ? (
+                          <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Saving...</>
+                        ) : "Save Notification Settings"}
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -306,13 +409,25 @@ export default function SettingsPage() {
                         <p className="text-[11px] text-muted-foreground leading-normal">
                           This deletes your entire student registry record: connections list, owned projects, recruitment logs, and messages. This action is final and cannot be undone.
                         </p>
-                        <Button
-                          variant="ghost"
-                          className="rounded-xl font-bold h-9 text-xs bg-destructive text-white hover:bg-destructive/95 button-ripple"
-                          onClick={() => toast({ title: "Termination process holds a demo lock.", variant: "destructive" })}
-                        >
-                          Delete Account Permanently
-                        </Button>
+                        <div className="space-y-2">
+                          <Input
+                            type="password"
+                            placeholder="Enter your password to confirm"
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                            className="rounded-xl h-10 border border-destructive/30 text-xs font-semibold"
+                          />
+                          <Button
+                            variant="destructive"
+                            className="rounded-xl font-bold h-9 text-xs button-ripple w-full"
+                            onClick={handleDeleteAccount}
+                            disabled={deleteAccountMutation.isPending}
+                          >
+                            {deleteAccountMutation.isPending ? (
+                              <><Loader2 className="mr-2 h-3 w-3 animate-spin" /> Deleting...</>
+                            ) : "Delete Account Permanently"}
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -325,3 +440,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

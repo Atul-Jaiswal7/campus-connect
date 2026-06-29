@@ -5,6 +5,7 @@ import { CreatePostBox } from "@/components/feed/create-post-box";
 import { PostCard } from "@/components/feed/post-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import type { PostWithAuthor } from "@/types";
 
 export function FeedList({ trending = false }: { trending?: boolean }) {

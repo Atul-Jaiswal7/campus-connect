@@ -20,6 +20,10 @@ export async function GET() {
       unreadMessages,
       unreadNotifications,
       profile,
+      recentPosts,
+      recentProjects,
+      recentTeams,
+      savedPosts,
     ] = await Promise.all([
       prisma.profileView.count({ where: { profileId: userId } }),
       prisma.connection.count({
@@ -41,6 +45,48 @@ export async function GET() {
       }),
       prisma.notification.count({ where: { userId, isRead: false } }),
       prisma.profile.findUnique({ where: { userId } }),
+      prisma.post.findMany({
+        where: { authorId: userId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: {
+          author: {
+            select: {
+              profile: {
+                select: { firstName: true, lastName: true, avatarUrl: true },
+              },
+            },
+          },
+        },
+      }),
+      prisma.project.findMany({
+        where: { ownerId: userId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      }),
+      prisma.teamRecruitment.findMany({
+        where: { leaderId: userId, deletedAt: null },
+        orderBy: { createdAt: "desc" },
+        take: 4,
+      }),
+      prisma.postBookmark.findMany({
+        where: { userId },
+        include: {
+          post: {
+            include: {
+              author: {
+                select: {
+                  profile: {
+                    select: { firstName: true, lastName: true, avatarUrl: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
     ]);
 
     return NextResponse.json({
@@ -55,6 +101,10 @@ export async function GET() {
         unreadNotifications,
         profileCompletion: profile?.profileCompletion ?? 0,
         streakDays: profile?.streakDays ?? 0,
+        recentPosts,
+        recentProjects,
+        recentTeams,
+        savedPosts: savedPosts.map((sb) => sb.post),
       },
     });
   } catch (error) {
