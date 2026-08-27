@@ -91,6 +91,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (trigger === "update" && session) {
         token.role = session.role ?? token.role;
         token.isVerified = session.isVerified ?? token.isVerified;
+        token.name = session.name ?? token.name;
+        token.email = session.email ?? token.email;
+        token.picture = session.image ?? token.picture;
       }
 
       return token;
@@ -100,6 +103,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.isVerified = token.isVerified;
+        session.user.name = token.name ?? session.user.name;
+        session.user.email = token.email ?? session.user.email;
+        session.user.image = (token.picture as string | undefined) ?? session.user.image;
       }
       return session;
     },

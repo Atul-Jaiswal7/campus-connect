@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { verifyUser } from "@/services/auth.service";
 
 export async function POST(req: NextRequest) {
   try {
@@ -9,14 +11,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Token is required" }, { status: 400 });
     }
 
-    // TODO: Verify token properly with JWT or database
-    // For now, we'll just verify the user (simplified)
-    // In production, you'd decode the JWT token to get the userId
-    
-    // This is a simplified version - in production, verify the JWT token
-    // const decoded = jwt.verify(token, env.JWT_SECRET);
-    // await verifyUser(decoded.userId);
-    
+    const verificationToken = await prisma.verificationToken.findFirst({
+      where: { token },
+    });
+
+    if (!verificationToken || verificationToken.expires < new Date()) {
+      return NextResponse.json(
+        { error: "This verification link is invalid or has expired" },
+        { status: 400 }
+      );
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { email: verificationToken.identifier },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    await verifyUser(user.id);
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: verificationToken.identifier },
+    });
+
     return NextResponse.json(
       { message: "Email verified successfully" },
       { status: 200 }

@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { forgotPasswordSchema } from "@/lib/validations";
+import { sendPasswordResetEmail } from "@/services/email.service";
+import { env } from "@/lib/env";
 
 export async function POST(req: NextRequest) {
   try {
@@ -11,7 +14,7 @@ export async function POST(req: NextRequest) {
       where: { email: validated.email },
     });
 
-    if (!user) {
+    if (!user || !user.password) {
       // Don't reveal if email exists
       return NextResponse.json(
         { message: "If the email exists, a reset link has been sent" },
@@ -19,8 +22,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // TODO: Send actual email with reset token
-    // For now, just return success
+    const token = crypto.randomBytes(32).toString("hex");
+
+    await prisma.verificationToken.deleteMany({ where: { identifier: validated.email } });
+    await prisma.verificationToken.create({
+      data: {
+        identifier: validated.email,
+        token,
+        expires: new Date(Date.now() + 60 * 60 * 1000),
+      },
+    });
+
+    const resetUrl = `${env.NEXT_PUBLIC_APP_URL}/reset-password?token=${token}`;
+    await sendPasswordResetEmail(validated.email, resetUrl);
+
     return NextResponse.json(
       { message: "If the email exists, a reset link has been sent" },
       { status: 200 }

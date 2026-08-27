@@ -59,8 +59,10 @@ export async function getProfileByUserId(userId: string, viewerId?: string) {
   const connectionCount =
     user._count.sentConnections + user._count.receivedConnections;
 
+  const { password: _password, ...safeUser } = user;
+
   return {
-    ...user,
+    ...safeUser,
     connectionCount,
     connectionStatus,
     isFollowing,
@@ -93,7 +95,8 @@ export async function getSuggestedUsers(userId: string, limit = 5) {
         ? { department: myProfile.department }
         : { isNot: null },
     },
-    include: {
+    select: {
+      id: true,
       profile: {
         select: {
           firstName: true,

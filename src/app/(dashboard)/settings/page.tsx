@@ -14,12 +14,12 @@ import {
   Check,
   Loader2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type SettingsTab =
   | "account"
@@ -32,11 +32,27 @@ type SettingsTab =
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("account");
   const { theme, setTheme } = useTheme();
-  const { data: session, update } = useSession();
+  const { update } = useSession();
+
+  const { data: settingsData } = useQuery({
+    queryKey: ["settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      if (!res.ok) throw new Error("Failed to load settings");
+      const json = await res.json();
+      return json.data as {
+        name: string | null;
+        email: string;
+        emailNotifications: boolean;
+        matchSuggestions: boolean;
+        profilePublic: boolean;
+      };
+    },
+  });
 
   // Form States
-  const [username, setUsername] = useState(session?.user?.name ?? "");
-  const [email, setEmail] = useState(session?.user?.email ?? "");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [showEmailNotifications, setShowEmailNotifications] = useState(true);
@@ -44,21 +60,34 @@ export default function SettingsPage() {
   const [profilePublic, setProfilePublic] = useState(true);
   const [deletePassword, setDeletePassword] = useState("");
 
+  useEffect(() => {
+    if (!settingsData) return;
+    setUsername(settingsData.name ?? "");
+    setEmail(settingsData.email ?? "");
+    setShowEmailNotifications(settingsData.emailNotifications);
+    setShowMatchSuggestions(settingsData.matchSuggestions);
+    setProfilePublic(settingsData.profilePublic);
+  }, [settingsData]);
+
+  const queryClient = useQueryClient();
+
   const updateSettingsMutation = useMutation({
-    mutationFn: async (settings: any) => {
+    mutationFn: async (settings: Record<string, unknown>) => {
       const res = await fetch("/api/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-      if (!res.ok) throw new Error("Failed to update settings");
-      return res.json();
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error ?? "Failed to update settings");
+      return result;
     },
     onSuccess: () => {
       toast({ title: "Settings saved successfully!" });
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
     },
-    onError: () => {
-      toast({ title: "Failed to save settings", variant: "destructive" });
+    onError: (error: Error) => {
+      toast({ title: error.message || "Failed to save settings", variant: "destructive" });
     },
   });
 
@@ -83,7 +112,10 @@ export default function SettingsPage() {
 
   const handleSaveAccount = (e: React.FormEvent) => {
     e.preventDefault();
-    updateSettingsMutation.mutate({ emailNotifications: showEmailNotifications });
+    updateSettingsMutation.mutate(
+      { name: username, email },
+      { onSuccess: () => update({ name: username, email }) }
+    );
   };
 
   const handleSavePassword = (e: React.FormEvent) => {

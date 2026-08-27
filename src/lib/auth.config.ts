@@ -9,7 +9,7 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/verify-email"];
+      const publicRoutes = ["/", "/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
       const authRoutes = ["/login", "/register", "/forgot-password"];
       const adminRoutes = ["/admin"];
 

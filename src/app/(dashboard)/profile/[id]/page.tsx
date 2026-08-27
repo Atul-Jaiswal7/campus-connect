@@ -3,11 +3,11 @@
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState, use } from "react";
+import { useState } from "react";
 import { ConnectButton } from "@/components/shared/connect-button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,12 +32,33 @@ import {
   Loader2,
   Briefcase,
   BookOpen,
-  Check,
   X,
 } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface ExperienceForm {
+  id?: string;
+  title: string;
+  company: string;
+  location: string;
+  description: string;
+  startDate: string;
+  endDate: string;
+  isCurrent: boolean;
+}
+
+interface EducationForm {
+  id?: string;
+  institution: string;
+  degree: string;
+  field: string;
+  startDate: string;
+  endDate: string;
+  grade: string;
+  description: string;
+}
 
 export default function ProfileViewPage() {
   const params = useParams();
@@ -72,8 +93,8 @@ export default function ProfileViewPage() {
 
   const [skillsInput, setSkillsInput] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
-  const [experiences, setExperiences] = useState<any[]>([]);
-  const [educations, setEducations] = useState<any[]>([]);
+  const [experiences, setExperiences] = useState<ExperienceForm[]>([]);
+  const [educations, setEducations] = useState<EducationForm[]>([]);
 
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -121,7 +142,7 @@ export default function ProfileViewPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (payload: any) => {
+    mutationFn: async (payload: Record<string, unknown>) => {
       const res = await fetch(`/api/users/${userId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -163,30 +184,52 @@ export default function ProfileViewPage() {
     setOpenToTeam(p.openToTeam);
     setLookingForInternship(p.lookingForInternship);
 
-    setSkills(profile.skills?.map((s: any) => s.skill.name) ?? []);
+    setSkills(profile.skills?.map((s: { skill: { name: string } }) => s.skill.name) ?? []);
     setExperiences(
-      profile.experiences?.map((e: any) => ({
-        id: e.id,
-        title: e.title,
-        company: e.company,
-        location: e.location ?? "",
-        description: e.description ?? "",
-        startDate: e.startDate ? e.startDate.split("T")[0] : "",
-        endDate: e.endDate ? e.endDate.split("T")[0] : "",
-        isCurrent: e.isCurrent,
-      })) ?? []
+      profile.experiences?.map(
+        (e: {
+          id: string;
+          title: string;
+          company: string;
+          location: string | null;
+          description: string | null;
+          startDate: string;
+          endDate: string | null;
+          isCurrent: boolean;
+        }) => ({
+          id: e.id,
+          title: e.title,
+          company: e.company,
+          location: e.location ?? "",
+          description: e.description ?? "",
+          startDate: e.startDate ? e.startDate.split("T")[0] : "",
+          endDate: e.endDate ? e.endDate.split("T")[0] : "",
+          isCurrent: e.isCurrent,
+        })
+      ) ?? []
     );
     setEducations(
-      profile.educations?.map((edu: any) => ({
-        id: edu.id,
-        institution: edu.institution,
-        degree: edu.degree,
-        field: edu.field ?? "",
-        startDate: edu.startDate ? edu.startDate.split("T")[0] : "",
-        endDate: edu.endDate ? edu.endDate.split("T")[0] : "",
-        grade: edu.grade ?? "",
-        description: edu.description ?? "",
-      })) ?? []
+      profile.educations?.map(
+        (edu: {
+          id: string;
+          institution: string;
+          degree: string;
+          field: string | null;
+          startDate: string;
+          endDate: string | null;
+          grade: string | null;
+          description: string | null;
+        }) => ({
+          id: edu.id,
+          institution: edu.institution,
+          degree: edu.degree,
+          field: edu.field ?? "",
+          startDate: edu.startDate ? edu.startDate.split("T")[0] : "",
+          endDate: edu.endDate ? edu.endDate.split("T")[0] : "",
+          grade: edu.grade ?? "",
+          description: edu.description ?? "",
+        })
+      ) ?? []
     );
 
     setIsEditing(true);
@@ -441,7 +484,7 @@ export default function ProfileViewPage() {
         {/* Left Side: About, Experience, Education, Projects */}
         <div className="md:col-span-8 space-y-6">
           {/* About Bio */}
-          {p.bio && (
+          {p.bio ? (
             <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
               <CardHeader>
                 <CardTitle className="text-lg font-bold">About</CardTitle>
@@ -450,7 +493,19 @@ export default function ProfileViewPage() {
                 <p className="text-sm text-muted-foreground leading-relaxed font-medium whitespace-pre-wrap">{p.bio}</p>
               </CardContent>
             </Card>
-          )}
+          ) : isOwn ? (
+            <Card className="glass-card border border-dashed border-slate-200/70 dark:border-slate-800/70">
+              <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm font-semibold text-foreground">Tell people about yourself</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  Add a short bio so classmates and recruiters know what you&apos;re about.
+                </p>
+                <Button variant="outline" size="sm" className="rounded-xl font-bold text-xs" onClick={handleEditClick}>
+                  Add Bio
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {/* Experiences Section */}
           {profile.experiences?.length > 0 && (
@@ -462,7 +517,16 @@ export default function ProfileViewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {profile.experiences.map((exp: any) => (
+                {profile.experiences.map((exp: {
+                  id: string;
+                  title: string;
+                  company: string;
+                  location: string | null;
+                  description: string | null;
+                  startDate: string;
+                  endDate: string | null;
+                  isCurrent: boolean;
+                }) => (
                   <div key={exp.id} className="border-b last:border-b-0 pb-3 last:pb-0 relative">
                     <h3 className="font-extrabold text-foreground text-sm">{exp.title}</h3>
                     <p className="text-xs text-muted-foreground font-bold">{exp.company} · {exp.location}</p>
@@ -488,7 +552,16 @@ export default function ProfileViewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {profile.educations.map((edu: any) => (
+                {profile.educations.map((edu: {
+                  id: string;
+                  institution: string;
+                  degree: string;
+                  field: string | null;
+                  grade: string | null;
+                  description: string | null;
+                  startDate: string;
+                  endDate: string | null;
+                }) => (
                   <div key={edu.id} className="border-b last:border-b-0 pb-3 last:pb-0">
                     <h3 className="font-extrabold text-foreground text-sm">{edu.degree} in {edu.field}</h3>
                     <p className="text-xs text-muted-foreground font-bold">{edu.institution} {edu.grade ? `· Grade: ${edu.grade}` : ""}</p>
@@ -592,7 +665,7 @@ export default function ProfileViewPage() {
           )}
 
           {/* Skills Badges */}
-          {profile.skills?.length > 0 && (
+          {profile.skills?.length > 0 ? (
             <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
               <CardHeader>
                 <CardTitle className="text-lg font-bold">Skills</CardTitle>
@@ -608,7 +681,19 @@ export default function ProfileViewPage() {
                 ))}
               </CardContent>
             </Card>
-          )}
+          ) : isOwn ? (
+            <Card className="glass-card border border-dashed border-slate-200/70 dark:border-slate-800/70">
+              <CardContent className="flex flex-col items-center gap-3 py-8 text-center">
+                <p className="text-sm font-semibold text-foreground">No skills added yet</p>
+                <p className="text-xs text-muted-foreground max-w-xs">
+                  Showcase what you&apos;re good at so teammates and recruiters can find you.
+                </p>
+                <Button variant="outline" size="sm" className="rounded-xl font-bold text-xs" onClick={handleEditClick}>
+                  Add Skills
+                </Button>
+              </CardContent>
+            </Card>
+          ) : null}
         </div>
       </div>
 

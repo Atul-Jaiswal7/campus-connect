@@ -1,6 +1,17 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { extractHashtags } from "@/lib/utils";
 import type { PostInput } from "@/lib/validations";
+
+// Feed ranking tiers, lowest number surfaces first.
+export const FEED_PRIORITY = {
+  OPPORTUNITY: 0,
+  FOLLOWED_AUTHOR: 1,
+  FOLLOWED_COMMENTED: 2,
+  FOLLOWED_LIKED: 3,
+  TRENDING: 4,
+  OTHER: 5,
+} as const;
 
 const POST_INCLUDE = {
   author: {
@@ -43,33 +54,105 @@ export async function getFeedPosts(
 ) {
   const skip = (page - 1) * limit;
 
-  const [posts, total] = await Promise.all([
-    prisma.post.findMany({
-      where: {
-        deletedAt: null,
-        ...(trending ? { isTrending: true } : {}),
+  if (trending) {
+    const [posts, total] = await Promise.all([
+      prisma.post.findMany({
+        where: { deletedAt: null, isTrending: true },
+        include: {
+          ...POST_INCLUDE,
+          likes: { where: { userId }, select: { id: true } },
+          bookmarks: { where: { userId }, select: { id: true } },
+        },
+        orderBy: [{ likeCount: "desc" }, { createdAt: "desc" }],
+        skip,
+        take: limit,
+      }),
+      prisma.post.count({ where: { deletedAt: null, isTrending: true } }),
+    ]);
+
+    return {
+      data: posts.map((post) => ({
+        ...post,
+        isLiked: post.likes.length > 0,
+        isBookmarked: post.bookmarks.length > 0,
+        feedPriority: FEED_PRIORITY.TRENDING,
+        likes: undefined,
+        bookmarks: undefined,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: skip + limit < total,
       },
-      include: {
-        ...POST_INCLUDE,
-        likes: { where: { userId }, select: { id: true } },
-        bookmarks: { where: { userId }, select: { id: true } },
+    };
+  }
+
+  // Rank in SQL so pagination stays correct across the whole feed.
+  const ranked = await prisma.$queryRaw<Array<{ id: string; priority: number }>>(Prisma.sql`
+    SELECT p.id,
+      CASE
+        WHEN p."type" IN ('INTERNSHIP', 'PLACEMENT') THEN ${FEED_PRIORITY.OPPORTUNITY}
+        WHEN f."followingId" IS NOT NULL THEN ${FEED_PRIORITY.FOLLOWED_AUTHOR}
+        WHEN EXISTS (
+          SELECT 1 FROM comments c
+          JOIN follows fc ON fc."followingId" = c."authorId" AND fc."followerId" = ${userId}
+          WHERE c."postId" = p.id AND c."deletedAt" IS NULL
+        ) THEN ${FEED_PRIORITY.FOLLOWED_COMMENTED}
+        WHEN EXISTS (
+          SELECT 1 FROM likes l
+          JOIN follows fl ON fl."followingId" = l."userId" AND fl."followerId" = ${userId}
+          WHERE l."postId" = p.id
+        ) THEN ${FEED_PRIORITY.FOLLOWED_LIKED}
+        WHEN p."isTrending" THEN ${FEED_PRIORITY.TRENDING}
+        ELSE ${FEED_PRIORITY.OTHER}
+      END AS priority
+    FROM posts p
+    LEFT JOIN follows f
+      ON f."followingId" = p."authorId" AND f."followerId" = ${userId}
+    WHERE p."deletedAt" IS NULL
+    ORDER BY priority ASC, p."createdAt" DESC
+    LIMIT ${limit} OFFSET ${skip}
+  `);
+
+  const total = await prisma.post.count({ where: { deletedAt: null } });
+
+  if (ranked.length === 0) {
+    return {
+      data: [],
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasMore: false,
       },
-      orderBy: trending
-        ? [{ likeCount: "desc" }, { createdAt: "desc" }]
-        : { createdAt: "desc" },
-      skip,
-      take: limit,
-    }),
-    prisma.post.count({
-      where: { deletedAt: null, ...(trending ? { isTrending: true } : {}) },
-    }),
-  ]);
+    };
+  }
+
+  const priorityById = new Map(ranked.map((r) => [r.id, Number(r.priority)]));
+
+  const posts = await prisma.post.findMany({
+    where: { id: { in: ranked.map((r) => r.id) } },
+    include: {
+      ...POST_INCLUDE,
+      likes: { where: { userId }, select: { id: true } },
+      bookmarks: { where: { userId }, select: { id: true } },
+    },
+  });
+
+  // findMany ignores the ranked order, so restore it here.
+  const orderedPosts = ranked
+    .map((r) => posts.find((p) => p.id === r.id))
+    .filter((p): p is (typeof posts)[number] => Boolean(p));
 
   return {
-    data: posts.map((post) => ({
+    data: orderedPosts.map((post) => ({
       ...post,
       isLiked: post.likes.length > 0,
       isBookmarked: post.bookmarks.length > 0,
+      feedPriority: priorityById.get(post.id) ?? FEED_PRIORITY.OTHER,
       likes: undefined,
       bookmarks: undefined,
     })),

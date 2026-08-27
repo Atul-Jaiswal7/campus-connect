@@ -70,6 +70,7 @@ export interface PostWithAuthor {
   };
   isLiked?: boolean;
   isBookmarked?: boolean;
+  feedPriority?: number;
 }
 
 export interface ProjectWithOwner {
@@ -140,6 +141,29 @@ export interface NotificationItem {
   } | null;
 }
 
+export interface DashboardPost {
+  id: string;
+  content: string;
+  likeCount: number;
+  commentCount: number;
+  author?: {
+    profile: { firstName: string; lastName: string; avatarUrl: string | null } | null;
+  };
+}
+
+export interface DashboardProject {
+  id: string;
+  title: string;
+  status: string;
+}
+
+export interface DashboardTeam {
+  id: string;
+  title: string;
+  currentMembers: number;
+  teamSize: number;
+}
+
 export interface DashboardStats {
   profileViews: number;
   connections: number;
@@ -150,10 +174,10 @@ export interface DashboardStats {
   unreadNotifications: number;
   profileCompletion: number;
   streakDays: number;
-  recentPosts?: any[];
-  recentProjects?: any[];
-  recentTeams?: any[];
-  savedPosts?: any[];
+  recentPosts?: DashboardPost[];
+  recentProjects?: DashboardProject[];
+  recentTeams?: DashboardTeam[];
+  savedPosts?: DashboardPost[];
 }
 
 export interface SearchResult {

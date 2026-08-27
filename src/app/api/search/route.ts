@@ -25,7 +25,8 @@ export async function GET(req: NextRequest) {
             ],
           },
         },
-        include: {
+        select: {
+          id: true,
           profile: {
             select: {
               firstName: true,

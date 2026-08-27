@@ -10,6 +10,64 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, User, Briefcase, Code2, Award, MessageSquare, Users } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 
+interface SearchStudent {
+  id: string;
+  profile: {
+    firstName: string;
+    lastName: string;
+    avatarUrl: string | null;
+    department: string | null;
+    year: number | null;
+  } | null;
+}
+
+interface SearchProject {
+  id: string;
+  title: string;
+  owner: { profile: { firstName: string; lastName: string } | null };
+}
+
+interface SearchPost {
+  id: string;
+  content: string;
+  author: { profile: { firstName: string; lastName: string; avatarUrl: string | null } | null };
+}
+
+interface SearchTeam {
+  id: string;
+  title: string;
+  leader: { profile: { firstName: string; lastName: string } | null };
+}
+
+interface SearchOpportunity {
+  id: string;
+  title: string;
+  company: string;
+  type: string;
+}
+
+interface SearchSkill {
+  id: string;
+  name: string;
+  _count?: { userSkills: number };
+}
+
+interface SearchClub {
+  id: string;
+  name: string;
+  description: string | null;
+}
+
+interface SearchResults {
+  students?: SearchStudent[];
+  projects?: SearchProject[];
+  posts?: SearchPost[];
+  teams?: SearchTeam[];
+  opportunities?: SearchOpportunity[];
+  skills?: SearchSkill[];
+  clubs?: SearchClub[];
+}
+
 export default function SearchPage() {
   const [query, setQuery] = useState("");
   const [type, setType] = useState("all");
@@ -33,7 +91,7 @@ export default function SearchPage() {
     setSearchTerm(query);
   };
 
-  const results = data?.data ?? {};
+  const results: SearchResults = data?.data ?? {};
 
   const searchTypes = [
     { value: "all", label: "All" },
@@ -95,19 +153,19 @@ export default function SearchPage() {
       {!isLoading && searchTerm && Object.keys(results).length === 0 && (
         <Card className="glass-card border border-slate-200/50 dark:border-slate-800/50">
           <CardContent className="py-16 text-center">
-            <p className="text-sm text-muted-foreground font-semibold">No results found for "{searchTerm}"</p>
+            <p className="text-sm text-muted-foreground font-semibold">No results found for &quot;{searchTerm}&quot;</p>
           </CardContent>
         </Card>
       )}
 
       {/* Students */}
-      {results.students && (results.students as Array<any>).length > 0 && (
+      {results.students && results.students.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <User className="h-4 w-4" /> Students
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {(results.students as Array<any>).map((s) => (
+            {results.students.map((s) => (
               <Link key={s.id} href={`/profile/${s.id}`}>
                 <Card className="glass-card hover:shadow-md transition-all cursor-pointer border border-slate-200/50 dark:border-slate-800/50">
                   <CardContent className="p-4 flex items-center gap-3">
@@ -134,13 +192,13 @@ export default function SearchPage() {
       )}
 
       {/* Projects */}
-      {results.projects && (results.projects as Array<any>).length > 0 && (
+      {results.projects && results.projects.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <Briefcase className="h-4 w-4" /> Projects
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {(results.projects as Array<any>).map((p) => (
+            {results.projects.map((p) => (
               <Link key={p.id} href={`/projects/${p.id}`}>
                 <Card className="glass-card hover:shadow-md transition-all cursor-pointer border border-slate-200/50 dark:border-slate-800/50">
                   <CardContent className="p-4">
@@ -157,13 +215,13 @@ export default function SearchPage() {
       )}
 
       {/* Posts */}
-      {results.posts && (results.posts as Array<any>).length > 0 && (
+      {results.posts && results.posts.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <MessageSquare className="h-4 w-4" /> Posts
           </h2>
           <div className="space-y-2">
-            {(results.posts as Array<any>).map((p) => (
+            {results.posts.map((p) => (
               <Link key={p.id} href={`/feed`}>
                 <Card className="glass-card hover:shadow-md transition-all cursor-pointer border border-slate-200/50 dark:border-slate-800/50">
                   <CardContent className="p-4">
@@ -192,13 +250,13 @@ export default function SearchPage() {
       )}
 
       {/* Teams */}
-      {results.teams && (results.teams as Array<any>).length > 0 && (
+      {results.teams && results.teams.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <Users className="h-4 w-4" /> Teams
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {(results.teams as Array<any>).map((t) => (
+            {results.teams.map((t) => (
               <Link key={t.id} href={`/teams/${t.id}`}>
                 <Card className="glass-card hover:shadow-md transition-all cursor-pointer border border-slate-200/50 dark:border-slate-800/50">
                   <CardContent className="p-4">
@@ -215,13 +273,13 @@ export default function SearchPage() {
       )}
 
       {/* Opportunities */}
-      {results.opportunities && (results.opportunities as Array<any>).length > 0 && (
+      {results.opportunities && results.opportunities.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <Award className="h-4 w-4" /> Opportunities
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {(results.opportunities as Array<any>).map((o) => (
+            {results.opportunities.map((o) => (
               <Card key={o.id} className="glass-card border border-slate-200/50 dark:border-slate-800/50">
                 <CardContent className="p-4">
                   <p className="font-bold text-sm text-foreground truncate">{o.title}</p>
@@ -236,13 +294,13 @@ export default function SearchPage() {
       )}
 
       {/* Skills */}
-      {results.skills && (results.skills as Array<any>).length > 0 && (
+      {results.skills && results.skills.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <Code2 className="h-4 w-4" /> Skills
           </h2>
           <div className="flex flex-wrap gap-2">
-            {(results.skills as Array<any>).map((s) => (
+            {results.skills.map((s) => (
               <span
                 key={s.id}
                 className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs font-bold px-3 py-1.5 rounded-lg border"
@@ -256,13 +314,13 @@ export default function SearchPage() {
       )}
 
       {/* Clubs */}
-      {results.clubs && (results.clubs as Array<any>).length > 0 && (
+      {results.clubs && results.clubs.length > 0 && (
         <div className="space-y-3">
           <h2 className="text-sm font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
             <Award className="h-4 w-4" /> Clubs
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            {(results.clubs as Array<any>).map((c) => (
+            {results.clubs.map((c) => (
               <Card key={c.id} className="glass-card border border-slate-200/50 dark:border-slate-800/50">
                 <CardContent className="p-4">
                   <p className="font-bold text-sm text-foreground">{c.name}</p>

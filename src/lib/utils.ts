@@ -63,7 +63,8 @@ export function extractHashtags(content: string): string[] {
 
 export function isCollegeEmail(email: string, domain?: string): boolean {
   if (!domain) return true;
-  return email.toLowerCase().endsWith(`@${domain.toLowerCase()}`);
+  const normalized = domain.toLowerCase().replace(/^@/, "");
+  return email.toLowerCase().endsWith(`@${normalized}`);
 }
 
 export function paginate<T>(items: T[], page: number, limit: number) {

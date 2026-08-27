@@ -19,7 +19,7 @@ import {
   FolderKanban,
   Plus,
 } from "lucide-react";
-import type { DashboardStats } from "@/types";
+import type { DashboardStats, DashboardPost, DashboardProject, DashboardTeam } from "@/types";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -235,7 +235,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {stats?.recentPosts && stats.recentPosts.length > 0 ? (
-              stats.recentPosts.slice(0, 3).map((post: any) => (
+              stats.recentPosts.slice(0, 3).map((post: DashboardPost) => (
                 <div key={post.id} className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border">
                   <p className="text-xs font-semibold text-foreground line-clamp-2">{post.content}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">
@@ -261,7 +261,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {stats?.savedPosts && stats.savedPosts.length > 0 ? (
-              stats.savedPosts.slice(0, 3).map((post: any) => (
+              stats.savedPosts.slice(0, 3).map((post: DashboardPost) => (
                 <div key={post.id} className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border">
                   <p className="text-xs font-semibold text-foreground line-clamp-2">{post.content}</p>
                   <p className="text-[10px] text-muted-foreground mt-1">
@@ -290,7 +290,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {stats?.recentProjects && stats.recentProjects.length > 0 ? (
-              stats.recentProjects.slice(0, 3).map((project: any) => (
+              stats.recentProjects.slice(0, 3).map((project: DashboardProject) => (
                 <Link key={project.id} href={`/projects/${project.id}`}>
                   <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border hover:bg-accent/40 cursor-pointer transition-colors">
                     <p className="text-xs font-bold text-foreground">{project.title}</p>
@@ -323,7 +323,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             {stats?.recentTeams && stats.recentTeams.length > 0 ? (
-              stats.recentTeams.slice(0, 3).map((team: any) => (
+              stats.recentTeams.slice(0, 3).map((team: DashboardTeam) => (
                 <Link key={team.id} href={`/teams/${team.id}`}>
                   <div className="p-3 rounded-xl bg-slate-50/50 dark:bg-slate-900/30 border hover:bg-accent/40 cursor-pointer transition-colors">
                     <p className="text-xs font-bold text-foreground">{team.title}</p>

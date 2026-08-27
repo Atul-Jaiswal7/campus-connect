@@ -7,12 +7,32 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Heart, Share2, Bookmark, TrendingUp, MoreHorizontal } from "lucide-react";
+import {
+  Heart,
+  Share2,
+  Bookmark,
+  TrendingUp,
+  MoreHorizontal,
+  Briefcase,
+  UserCheck,
+  MessageCircle,
+} from "lucide-react";
 import { cn, formatRelativeTime, getInitials } from "@/lib/utils";
-import { CommentSection } from "@/components/feed/comment-section";
+import { CommentSection, CommentToggleButton } from "@/components/feed/comment-section";
 import { toast } from "@/hooks/use-toast";
 import { useSession } from "next-auth/react";
 import type { PostWithAuthor } from "@/types";
+
+const FEED_REASONS: Record<
+  number,
+  { label: string; icon: typeof Briefcase; className: string }
+> = {
+  0: { label: "Opportunity for you", icon: Briefcase, className: "text-emerald-600" },
+  1: { label: "From someone you follow", icon: UserCheck, className: "text-primary" },
+  2: { label: "Someone you follow commented", icon: MessageCircle, className: "text-primary" },
+  3: { label: "Someone you follow liked this", icon: Heart, className: "text-rose-500" },
+  4: { label: "Trending on campus", icon: TrendingUp, className: "text-orange-500" },
+};
 
 interface PostCardProps {
   post: PostWithAuthor;
@@ -24,6 +44,7 @@ export function PostCard({ post }: PostCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(post.content);
   const [showMenu, setShowMenu] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(false);
 
   const author = post.author.profile;
   const authorName = author
@@ -101,12 +122,20 @@ export function PostCard({ post }: PostCardProps) {
     updateMutation.mutate(editContent);
   };
 
+  const reason = FEED_REASONS[post.feedPriority ?? -1];
+
   return (
     <Card className="glass-card animate-slide-up">
       <CardHeader className="p-4 sm:p-6 pb-3 sm:pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Link href={`/profile/${post.author.id}`}>
+        {reason && (
+          <p className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+            <reason.icon className={cn("h-3.5 w-3.5 shrink-0", reason.className)} />
+            {reason.label}
+          </p>
+        )}
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href={`/profile/${post.author.id}`} className="shrink-0">
               <Avatar>
                 <AvatarImage src={author?.avatarUrl ?? undefined} />
                 <AvatarFallback className="bg-linkedin text-white">
@@ -114,29 +143,29 @@ export function PostCard({ post }: PostCardProps) {
                 </AvatarFallback>
               </Avatar>
             </Link>
-            <div>
+            <div className="min-w-0">
               <Link
                 href={`/profile/${post.author.id}`}
-                className="font-semibold hover:text-linkedin hover:underline"
+                className="font-semibold hover:text-linkedin hover:underline block truncate"
               >
                 {authorName}
               </Link>
               {author?.headline && (
-                <p className="text-xs text-muted-foreground line-clamp-1">{author.headline}</p>
+                <p className="text-xs text-muted-foreground truncate">{author.headline}</p>
               )}
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground truncate">
                 {formatRelativeTime(post.createdAt)}
                 {post.isTrending && (
                   <span className="ml-2 inline-flex items-center text-orange-500">
-                    <TrendingUp className="mr-1 h-3 w-3" />
+                    <TrendingUp className="mr-1 h-3 w-3 shrink-0" />
                     Trending
                   </span>
                 )}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2 relative">
-            <span className="rounded-full bg-slate-100 dark:bg-slate-800 border px-2.5 py-0.5 text-xs capitalize shrink-0 text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-2 relative shrink-0">
+            <span className="hidden sm:inline-flex rounded-full bg-slate-100 dark:bg-slate-800 border px-2.5 py-0.5 text-xs capitalize shrink-0 text-slate-600 dark:text-slate-400">
               {post.type.toLowerCase().replace("_", " ")}
             </span>
             {isOwner && (
@@ -229,31 +258,44 @@ export function PostCard({ post }: PostCardProps) {
           <span>{post.commentCount} comments</span>
         </div>
 
-        <div className="flex items-center justify-around border-t pt-2">
+        <div className="grid grid-cols-4 border-t pt-2">
           <Button
             variant="ghost"
             size="sm"
-            className={cn(post.isLiked && "text-red-500")}
+            className={cn("w-full gap-1.5 px-1 sm:gap-2 sm:px-3", post.isLiked && "text-red-500")}
             onClick={() => likeMutation.mutate()}
+            disabled={likeMutation.isPending}
           >
-            <Heart className={cn("mr-2 h-4 w-4", post.isLiked && "fill-current")} />
-            Like
+            <Heart className={cn("h-4 w-4 shrink-0", post.isLiked && "fill-current")} />
+            <span className="hidden sm:inline">Like</span>
           </Button>
-          <CommentSection postId={post.id} commentCount={post.commentCount} />
-          <Button variant="ghost" size="sm" onClick={() => shareMutation.mutate()}>
-            <Share2 className="mr-2 h-4 w-4" />
-            Share
+          <CommentToggleButton
+            commentCount={post.commentCount}
+            open={commentsOpen}
+            onToggle={() => setCommentsOpen((v) => !v)}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full gap-1.5 px-1 sm:gap-2 sm:px-3"
+            onClick={() => shareMutation.mutate()}
+          >
+            <Share2 className="h-4 w-4 shrink-0" />
+            <span className="hidden sm:inline">Share</span>
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className={cn(post.isBookmarked && "text-linkedin")}
+            className={cn("w-full gap-1.5 px-1 sm:gap-2 sm:px-3", post.isBookmarked && "text-linkedin")}
             onClick={() => bookmarkMutation.mutate()}
+            disabled={bookmarkMutation.isPending}
           >
-            <Bookmark className={cn("mr-2 h-4 w-4", post.isBookmarked && "fill-current")} />
-            Save
+            <Bookmark className={cn("h-4 w-4 shrink-0", post.isBookmarked && "fill-current")} />
+            <span className="hidden sm:inline">Save</span>
           </Button>
         </div>
+
+        <CommentSection postId={post.id} open={commentsOpen} />
       </CardContent>
     </Card>
   );

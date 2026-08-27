@@ -150,6 +150,9 @@ model User {
   role          Role      @default(STUDENT)
   isVerified    Boolean   @default(false)
   isActive      Boolean   @default(true)
+  emailNotifications Boolean @default(true)
+  matchSuggestions   Boolean @default(true)
+  profilePublic      Boolean @default(true)
   deletedAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

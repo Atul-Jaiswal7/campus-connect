@@ -13,6 +13,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   NEXT_PUBLIC_APP_NAME: z.string().default("Campus Connect"),
   COLLEGE_EMAIL_DOMAIN: z.string().optional(),
+  BREVO_API_KEY: z.string().optional(),
+  BREVO_FROM_EMAIL: z.string().optional(),
 });
 
 export const env = envSchema.parse({
@@ -28,4 +30,6 @@ export const env = envSchema.parse({
   NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
   NEXT_PUBLIC_APP_NAME: process.env.NEXT_PUBLIC_APP_NAME ?? "Campus Connect",
   COLLEGE_EMAIL_DOMAIN: process.env.COLLEGE_EMAIL_DOMAIN,
+  BREVO_API_KEY: process.env.BREVO_API_KEY,
+  BREVO_FROM_EMAIL: process.env.BREVO_FROM_EMAIL,
 });

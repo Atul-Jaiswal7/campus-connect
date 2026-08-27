@@ -69,8 +69,8 @@ export async function GET() {
         orderBy: { createdAt: "desc" },
         take: 4,
       }),
-      prisma.postBookmark.findMany({
-        where: { userId },
+      prisma.bookmark.findMany({
+        where: { userId, postId: { not: null } },
         include: {
           post: {
             include: {
@@ -104,7 +104,7 @@ export async function GET() {
         recentPosts,
         recentProjects,
         recentTeams,
-        savedPosts: savedPosts.map((sb) => sb.post),
+        savedPosts: savedPosts.map((sb: (typeof savedPosts)[number]) => sb.post),
       },
     });
   } catch (error) {
